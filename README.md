@@ -1,6 +1,6 @@
 # Payment Gateway – Async Architecture
 
-A simplified asynchronous payment gateway system with webhook handling, retries, dashboard, and checkout SDK  
+A simplified asynchronous payment gateway system with webhook handling, retries, dashboard, and checkout SDK   
 
 ---
 
