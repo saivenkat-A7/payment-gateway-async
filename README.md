@@ -4,7 +4,7 @@ A simplified asynchronous payment gateway system with webhook handling, retries,
 
 ---
 
-## Tech Stack 
+## Tech Stack  
 
 - Backend API: Node.js + Express 
 - Worker: Node.js + Bull 
