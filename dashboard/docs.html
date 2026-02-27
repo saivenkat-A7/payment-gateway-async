@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>API Documentation (v2)</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; background: #f4f6f8; }
+        
+        /* Navigation Bar Styles */
+        .nav { background: #fff; padding: 15px 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; align-items: center; margin-bottom: 30px; }
+        .nav h1 { font-size: 18px; margin: 0; margin-right: 40px; color: #333; }
+        .nav a { text-decoration: none; color: #666; margin-right: 20px; font-weight: 500; transition: color 0.2s; }
+        .nav a:hover, .nav a.active { color: #007bff; }
+
+        /* Docs Content Styles */
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 40px; }
+        h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 30px; }
+        section { margin-bottom: 40px; }
+        h3 { color: #007bff; margin-bottom: 15px; }
+        pre { background: #2d2d2d; color: #f8f8f2; padding: 20px; border-radius: 6px; overflow-x: auto; font-family: "Consolas", "Monaco", monospace; line-height: 1.5; }
+        .note { background: #fff3cd; color: #856404; padding: 15px; border-radius: 4px; margin-top: 10px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div class="nav">
+        <h1>Payment Gateway</h1>
+        <a href="index.html">Dashboard</a>
+        <a href="webhooks.html">Webhooks</a>
+        <a href="docs.html" class="active">Documentation</a>
+        <a href="demo.html">Demo Store</a>
+    </div>
+
+    <div class="container" data-test-id="api-docs">
+        <h2>Integration Guide</h2>
+        
+        <section data-test-id="section-create-order">
+            <h3>1. Create Payment</h3>
+            <p>Initiate a payment session from your backend to receive an order ID.</p>
+            <pre data-test-id="code-snippet-create-order">
+curl -X POST http://localhost:8000/api/v1/payments \
+  -H "X-Api-Key: key_test_abc123" \
+  -H "X-Api-Secret: secret_test_xyz789" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 5000, 
+    "currency": "INR", 
+    "order_id": "ord_123",
+    "method": "upi",
+    "vpa": "test@upi"
+  }'</pre>
+        </section>
+
+        <section data-test-id="section-sdk-integration">
+            <h3>2. SDK Integration</h3>
+            <p>Embed the checkout widget on your frontend using our JavaScript SDK.</p>
+            <pre data-test-id="code-snippet-sdk">
+&lt;script src="http://localhost:3001/checkout.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  const gateway = new window.PaymentGateway({
+    key: 'key_test_abc123',
+    orderId: 'ord_123',
+    onSuccess: (data) => console.log("Payment Success:", data),
+    onFailure: (error) => console.error("Payment Failed:", error)
+  });
+
+  // Open the modal
+  gateway.open();
+&lt;/script&gt;</pre>
+        </section>
+
+        <section data-test-id="section-webhook-verification">
+            <h3>3. Webhook Verification</h3>
+            <p>Verify the <code>X-Webhook-Signature</code> header to ensure the event came from us.</p>
+            <pre data-test-id="code-snippet-webhook">
+const crypto = require('crypto');
+
+function verifyWebhook(req, secret) {
+    const signature = req.headers['x-webhook-signature'];
+    const payload = JSON.stringify(req.body); // Must be raw JSON
+    
+    const expected = crypto
+        .createHmac('sha256', secret)
+        .update(payload)
+        .digest('hex');
+
+    return signature === expected;
+}</pre>
+            <div class="note">
+                <strong>Note:</strong> Your webhook secret can be found in the Webhooks Dashboard.
+            </div>
+        </section>
+    </div>
+</body>
+</html>

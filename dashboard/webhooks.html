@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Webhook Dashboard</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; background: #f4f6f8; }
+        
+        /* Navigation Bar Styles */
+        .nav { background: #fff; padding: 15px 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; align-items: center; margin-bottom: 30px; }
+        .nav h1 { font-size: 18px; margin: 0; margin-right: 40px; color: #333; }
+        .nav a { text-decoration: none; color: #666; margin-right: 20px; font-weight: 500; transition: color 0.2s; }
+        .nav a:hover, .nav a.active { color: #007bff; }
+
+        /* Page Content Styles */
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h2 { margin-top: 0; color: #333; }
+        
+        /* Form Styles */
+        input[type="url"] { padding: 10px; width: 300px; border: 1px solid #ddd; border-radius: 4px; margin-top: 5px; }
+        button { padding: 10px 16px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; font-weight: 500; }
+        button:hover { background: #0056b3; }
+        .secondary-btn { background: #6c757d; }
+        .secondary-btn:hover { background: #5a6268; }
+        
+        /* Table Styles */
+        table { width: 100%; border-collapse: collapse; margin-top: 30px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; color: #555; font-weight: 600; }
+        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .status-success { background: #d4edda; color: #155724; }
+        .status-failed { background: #f8d7da; color: #721c24; }
+        .status-pending { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+
+    <div class="nav">
+        <h1>Payment Gateway</h1>
+        <a href="index.html">Dashboard</a>
+        <a href="webhooks.html" class="active">Webhooks</a>
+        <a href="docs.html">Documentation</a>
+        <a href="demo.html">Demo Store</a>
+    </div>
+
+    <div class="container" data-test-id="webhook-config">
+        <h2>Webhook Configuration</h2>
+        
+        <form data-test-id="webhook-config-form" onsubmit="event.preventDefault(); alert('Config Saved!');">
+            <div style="margin-bottom: 20px;">
+                <label style="display:block; font-weight:500; margin-bottom:5px;">Webhook URL</label>
+                <input data-test-id="webhook-url-input" type="url" value="http://localhost:4000/webhook">
+            </div>
+            
+            <div style="margin-bottom: 25px;">
+                <label style="display:block; font-weight:500; margin-bottom:5px;">Webhook Secret</label>
+                <span data-test-id="webhook-secret" style="font-family: monospace; background: #eee; padding: 8px; border-radius: 4px; display: inline-block; margin-right: 10px;">whsec_test_abc123</span>
+                <button class="secondary-btn" data-test-id="regenerate-secret-button" type="button">Regenerate</button>
+            </div>
+            
+            <div style="border-top: 1px solid #eee; padding-top: 20px;">
+                <button data-test-id="save-webhook-button" type="submit">Save Configuration</button>
+                <button class="secondary-btn" data-test-id="test-webhook-button" type="button" style="margin-left: 10px;">Send Test Webhook</button>
+            </div>
+        </form>
+
+        <h3 style="margin-top: 40px; border-bottom: 2px solid #eee; padding-bottom: 10px;">Webhook Logs</h3>
+        <table data-test-id="webhook-logs-table">
+            <thead>
+                <tr>
+                    <th>Event</th>
+                    <th>Status</th>
+                    <th>Attempts</th>
+                    <th>Last Attempt</th>
+                    <th>Response</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="logs-body">
+                </tbody>
+        </table>
+    </div>
+
+    <script>
+        async function loadLogs() {
+            try {
+                const res = await fetch('http://localhost:8000/api/v1/webhooks', {
+                    headers: { 'X-Api-Key': 'key_test_abc123', 'X-Api-Secret': 'secret_test_xyz789' }
+                });
+                const data = await res.json();
+                
+                const tbody = document.getElementById('logs-body');
+                tbody.innerHTML = '';
+
+                if (data.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#888;">No webhooks sent yet.</td></tr>';
+                    return;
+                }
+
+                data.data.forEach(log => {
+                    const tr = document.createElement('tr');
+                    tr.setAttribute('data-test-id', 'webhook-log-item');
+                    tr.setAttribute('data-webhook-id', log.id);
+                    
+                    const statusClass = `status-${log.status}`;
+                    
+                    tr.innerHTML = `
+                        <td data-test-id="webhook-event" style="font-family:monospace;">${log.event}</td>
+                        <td data-test-id="webhook-status"><span class="status-badge ${statusClass}">${log.status}</span></td>
+                        <td data-test-id="webhook-attempts">${log.attempts}</td>
+                        <td data-test-id="webhook-last-attempt" style="font-size: 13px;">${log.lastAttemptAt ? new Date(log.lastAttemptAt).toLocaleTimeString() : '-'}</td>
+                        <td data-test-id="webhook-response-code">${log.responseCode || '-'}</td>
+                        <td>
+                            ${log.status === 'failed' ? `<button style="padding: 5px 10px; font-size: 12px;" data-test-id="retry-webhook-button" onclick="retryWebhook('${log.id}')">Retry</button>` : ''}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) { 
+                console.error("Failed to load logs", e);
+                document.getElementById('logs-body').innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">Error connecting to API</td></tr>';
+            }
+        }
+
+        async function retryWebhook(id) {
+            await fetch(`http://localhost:8000/api/v1/webhooks/${id}/retry`, {
+                method: 'POST',
+                headers: { 'X-Api-Key': 'key_test_abc123', 'X-Api-Secret': 'secret_test_xyz789' }
+            });
+            setTimeout(loadLogs, 1000);
+        }
+
+        loadLogs();
+        setInterval(loadLogs, 5000); // Auto refresh every 5s
+    </script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merchant Demo Store</title>
+    <style>
+        /* Shared Styles for consistency */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; background: #f4f6f8; }
+        .nav { background: #fff; padding: 15px 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; align-items: center; }
+        .nav h1 { font-size: 18px; margin: 0; margin-right: 40px; color: #333; }
+        .nav a { text-decoration: none; color: #666; margin-right: 20px; font-weight: 500; transition: color 0.2s; }
+        .nav a:hover, .nav a.active { color: #007bff; }
+        
+        /* Demo Page Specifics */
+        .container { max-width: 800px; margin: 40px auto; padding: 20px; }
+        .product-card { background: white; border-radius: 12px; padding: 40px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .product-image { width: 150px; height: 150px; background: #eee; border-radius: 8px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #ccc; }
+        .price { font-size: 32px; font-weight: bold; color: #333; margin: 10px 0 30px; }
+        .buy-btn { background: #007bff; color: white; border: none; padding: 15px 40px; font-size: 18px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: transform 0.1s; }
+        .buy-btn:hover { background: #0056b3; transform: scale(1.02); }
+        .log-area { margin-top: 30px; text-align: left; background: #2d2d2d; color: #0f0; padding: 15px; border-radius: 6px; font-family: monospace; min-height: 100px; }
+    </style>
+</head>
+<body>
+
+    <div class="nav">
+        <h1>Payment Gateway</h1>
+        <a href="index.html">Dashboard</a>
+        <a href="webhooks.html">Webhooks</a>
+        <a href="docs.html">Documentation</a>
+        <a href="demo.html" class="active">Demo Store</a>
+    </div>
+
+    <div class="container">
+        <div class="product-card">
+            <div class="product-image">👟</div>
+            <h2>Test Product: Super Kicks</h2>
+            <p>Experience the seamless checkout flow integration.</p>
+            <div class="price">₹500.00</div>
+            
+            <button id="buy-button" class="buy-btn">Buy Now</button>
+
+            <div class="log-area" id="logs">
+                > Waiting for action...
+            </div>
+        </div>
+    </div>
+
+    <script src="http://localhost:3001/checkout.js"></script>
+    
+    <script>
+        function log(msg) {
+            const logs = document.getElementById('logs');
+            logs.innerHTML += `<br>> ${msg}`;
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        document.getElementById('buy-button').addEventListener('click', function() {
+            // Generate a random Order ID
+            const orderId = 'ORD-' + Math.floor(Math.random() * 100000);
+            log(`Initializing Checkout for Order: ${orderId}...`);
+
+            const gateway = new window.PaymentGateway({
+                key: 'key_test_abc123', // Test Merchant Key
+                orderId: orderId,
+                onSuccess: (data) => {
+                    log(`✅ Payment Successful! ID: ${data.paymentId}`);
+                    alert('Payment Successful! Check Dashboard for Webhook.');
+                },
+                onFailure: (error) => {
+                    log(`❌ Payment Failed: ${error.message || JSON.stringify(error)}`);
+                },
+                onClose: () => {
+                    log('Modal closed.');
+                }
+            });
+
+            gateway.open();
+        });
+    </script>
+</body>
+</html>
